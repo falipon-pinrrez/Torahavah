@@ -1,0 +1,29 @@
+# Flujo para Bitrise. Requiere este proyecto en la raíz del repositorio (o rama).
+build-torah-apk:
+  steps:
+    - git-clone@8: {}
+    - flutter-installer@0:
+        inputs:
+          - version: stable
+          - is_update: "true"
+    - script@1:
+        title: Compilar APK Jumash
+        inputs:
+          - content: |-
+              set -exo pipefail
+              SRC="$BITRISE_SOURCE_DIR"
+              cd /tmp
+              flutter create --org com.jumash --project-name torah_parashot --platforms android torah_app
+              rm -rf torah_app/lib torah_app/test
+              cp -r "$SRC/lib" "$SRC/assets" "$SRC/pubspec.yaml" torah_app/
+              cd torah_app
+              G=android/app/build.gradle.kts; [ -f "$G" ] || G=android/app/build.gradle
+              sed -i -E 's/minSdk( =|) *flutter\.minSdkVersion/minSdk\1 23/; s/minSdkVersion flutter\.minSdkVersion/minSdkVersion 23/' "$G"
+              sed -i 's/android:label="torah_parashot"/android:label="Jumash"/' android/app/src/main/AndroidManifest.xml
+              flutter pub get
+              dart run flutter_launcher_icons
+              flutter build apk --release
+              cp build/app/outputs/flutter-apk/app-release.apk "$BITRISE_DEPLOY_DIR/Jumash-Parasha.apk"
+    - deploy-to-bitrise-io@2:
+        inputs:
+          - deploy_path: $BITRISE_DEPLOY_DIR/Jumash-Parasha.apk
