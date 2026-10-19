@@ -40,9 +40,13 @@ jobs:
         with:
           name: Jumash-Parasha-APK
           path: Jumash-Parasha.apk
+      - name: Leer versión
+        id: ver
+        run: echo "v=$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)" >> "$GITHUB_OUTPUT"
       - name: Publicar versión con el APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Jumash por Parashá ${{ github.run_number }}
+          tag_name: v${{ steps.ver.outputs.v }}
+          name: Jumash por Parashá ${{ steps.ver.outputs.v }}
+          make_latest: true
           files: Jumash-Parasha.apk
